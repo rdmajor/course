@@ -1,0 +1,95 @@
+ 常见的DNS服务器有哪些？
+ 主DNS  一级域名DNS  二级域名DNS  三级域名DNS   根域名DNS
+
+
+ 常见的DNS资源解析记录都有哪些？
+ NS    A    PTR（反向解析记录）   CNAME
+#####################################################
+Split分离解析（视图解析）
+
+• 当收到客户机的DNS查询请求的时候
+ – 能够区分客户机的来源地址
+ – 为不同类别的客户机提供不同的解析结果(IP地址)
+ – 判断客户端的来源，不同的客户端解析同一个域名得到的解析结果不同
+ – 针对不同的客户机就近提供服务器
+
+
+
+• 环境及需求
+– 权威DNS:svr7.tedu.cn 192.168.4.7
+– 负责区域:sina.com
+– A记录分离解析 —— 以 www.sina.com 为例
+客户机来自 解析结果
+    192.168.4.207  ---------》   192.168.4.100
+     其他地址          ---------》    1.2.3.4
+
+#################################################
+分离解析 
+ 1.客户端分类合理，所有的客户端都要匹配分类
+ 2.分类匹配，由上到下依次匹配，匹配及停止
+ 3.所有的zone必须在view中
+ 4.每一个view拥有所有的zone
+虚拟机A：
+[root@svr7 /]# vim /etc/named.conf
+ options {
+        directory       "/var/named";
+ };
+ view "nsd" {                             #分离解析，分类名称
+ match-clients  {   192.168.4.207;   };   #匹配客户端源IP地址
+  zone  "sina.com"  IN  {
+        type  master;
+        file  "sina.com.zone";            #指定地址库文件名字
+   };
+ };
+ view  "other"  {                        #分离解析，分类名称
+ match-clients  {   any;   };            #匹配客户端源IP地址
+  zone  "sina.com"   IN  {
+        type  master;
+        file  "sina.com.other";          #指定地址库文件名字
+   };
+ };
+# 建立地址库文件sina.com.zone与sina.com.other写入不同的解析结果
+# 重起地址库文件
+# nslookup www.sina.com 192.168.4.7
+
+##############################################################
+多区域分离解析
+
+虚拟机A：
+[root@svr7 /]# vim /etc/named.conf
+ options {
+        directory       "/var/named";
+ };
+view "nsd" {
+ match-clients  { 192.168.4.207;   };
+  zone "sina.com" IN {
+        type master;
+        file "sina.com.zone";
+   };
+  zone "tedu.cn" IN {
+        type master;
+        file "tedu.cn.zone";
+   };
+ };
+view "other" {
+ match-clients  { any;   };
+  zone "sina.com" IN {
+        type master;
+        file "sina.com.other";
+   };
+  zone "tedu.cn" IN {
+        type master;
+        file "tedu.cn.other";
+   };
+ };
+########################################################
+补充：• 为大批量的客户机地址建立列表  
+
+
+acl test { 192.168.4.207; 192.168.4.1; 192.168.4.2;
+           192.168.7.0/24; 192.168.4.200; };
+
+view "nsd" {
+ match-clients  {  test;   };
+  ......
+

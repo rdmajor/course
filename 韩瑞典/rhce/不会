@@ -1,0 +1,36 @@
+基础邮件服务
+ 99行    myorigin = server0.example.com   #默认补全的域名后缀
+ 116行  inet_interfaces = all           #允许所有人使用邮件服务
+ 164行  mydestination = server0.example.com  #判断为本域邮件
+
+
+
+零客户邮件服务器：
+315行  relayhost = [smtpX.example.com]     	//后端邮件服务器
+116行  inet_interfaces = loopback-only  	//仅本机
+99行   myorigin = desktopX.example.com 	//发件来源域
+264行  mynetworks = 127.0.0.0/8 [::1]/128  	//信任网络	
+164行  mydestination =   			//此行的值设为空
+138行  local_transport = error:suiyixie  
+
+
+
+多用户Samba挂载
+[root@desktop0 ~]# vim /etc/fstab 
+
+//172.25.0.11/devops /mnt/nsd02 cifs defaults,user=kenji,pass=123,_netdev,multiuser,sec=ntlmssp  0 0
+
+[root@desktop0 ~]# su - student
+
+$ cifscreds  add  -u  chihiro    172.25.0.11
+
+ssh远程fangwen
+[root@serverX ~]# vim /etc/ssh/sshd_config
+.. ..
+DenyUsers *@*.my133t.org *@172.34.0.*
+[root@serverX ~]# systemctl restart sshd
+
+数据库只能被localhost访问
+/etc/my.cnf
+[mysqld]
+skip-networking     //跳过网络

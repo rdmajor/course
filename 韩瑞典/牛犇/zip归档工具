@@ -1,0 +1,14 @@
+zip归档工具,跨平台的归档工具
+
+
+• 归档+压缩操作
+– zip [-r]   备份文件.zip   被归档的文档...
+
+• 释放归档+解压操作
+– unzip   备份文件.zip   [-d 目标文件夹]
+
+[root@svr7 ~]# zip -r /root/file.zip  /home/  /etc/passwd 
+[root@svr7 ~]# ls /root/
+
+[root@svr7 ~]# mkdir /nsd02
+[root@svr7 ~]# unzip /root/file.zip -d /nsd02

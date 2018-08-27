@@ -1,0 +1,19 @@
+#!/bin/bash
+case $1 in
+start)
+	/usr/local/nginx/sbin/nginx;;
+stop)
+	/usr/local/nginx/sbin/nginx -s stop;;
+restart)
+	/usr/local/nginx/sbin/nginx -s stop
+	/usr/local/nginx/sbin/nginx;;
+status)
+	netstat -ntulp | grep -q nginx
+	if [ $? -eq 0 ];then
+		echo "nginx已安装"
+	else 
+		echo "nginx未安装"
+	fi;;
+*)
+	echo Error;;
+esac

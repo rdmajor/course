@@ -1,0 +1,30 @@
+Yum软件包仓库,自动解决依赖关系
+
+服务端:为客户端安装软件包,并解决依赖关系
+
+服务端: 1.众多的软件包  2.仓库清单文件  3.共享的服务
+
+#服务端:classroom.example.com搭建Web服务,共享光盘所有内容RHEL7.0
+#客户端: 书写配置文件/etc/yum.repos.d/*.repo
+
+[root@server0 ~]# vim /etc/yum.repos.d/rhel7.repo
+        
+ [rhel7]          #仓库标识(可以随意写)
+ name=rhel7.0     #仓库描述信息(可以随意写)
+ baseurl=http://classroom.example.com/content/rhel7.0/x86_64/dvd/         
+                       #具体服务端访问位置
+ enabled=1        #是否启用该文件
+ gpgcheck=0       #是否检测签名认证
+
+[root@server0 ~]# yum  repolist    #列出仓库信息
+yum clean all   #清空缓存数据
+######################################################
+yum-con(tab) --add file:///目录
+#####################################################
+Yum使用
+
+   yum  -y  install 软件名    #安装软件
+   yum   remove   软件名      #卸载
+   yum   search   关键字      #查询
+   systemctl status 服务名  #查看服务启动状态
+   yum info vsftpd    #查看软件包的基本信息

@@ -1,0 +1,154 @@
+
+使用LDAP认证
+
+    LDAP服务器:  网络用户认证
+
+• 轻量级目录访问协议
+ – Lightweight Directory Access Protocol
+  – 由服务器来集中存储并向客户端提供的信息,存储方式类似于DNS分层结构
+  – 提供的信息包括:用户名、密码、通信录、主机名映 射记录、......
+
+      网络用户: 由LDAP服务器提供用户名 密码信息
+      本地用户: /etc/passwd  /etc/shadow
+
+一  搭建LDAP服务器 classroom.example.com
+
+二  搭建客户端,虚拟机Server0
+
+    1.安装软件sssd,与LDAP服务器沟通
+  [root@server0 /]# yum  -y  install  sssd
+     
+    2.安装图形软件配置sssd软件
+  [root@server0 /]# yum  -y  install  authconfig-gtk
+
+    3.运行图形软件进行配置
+  [root@server0 /]# authconfig-gtk
+
+   选择LDAP
+      dc=example,dc=com             #指定服务端域名
+      classroom.example.com         #指定服务端主机名
+
+  勾选TLS加密
+  使用证书加密: http://classroom.example.com/pub/example-ca.crt
+
+   选择LDAP密码
+
+    4.重起服务
+  [root@server0 ~]# systemctl restart sssd
+  [root@server0 ~]# systemctl enable sssd
+    5.验证:
+  [root@server0 ~]# grep ldapuser0 /etc/passwd
+  [root@server0 ~]# id ldapuser0    #可以看到用户基本信息
+
+######################################################
+家目录漫游
+
+什么是NFS共享
+• Network File System,网络文件系统
+– 由NFS服务器将指定的文件夹共享给客户机
+– 客户机将此共享目录 mount 到本地目录,访问此共享
+资源就像访问本地目录一样方便
+– 类似于 EXT4、XFS等类型,只不过资源在网上
+
+ NFS共享服务器:classroom.example.com
+
+   客户端:虚拟机server0访问共享即可
+
+  1.查看服务端共享文件夹
+ [root@server0 ~]# showmount -e classroom.example.com
+ Export list for classroom.example.com:
+ /home/guests  172.25.0.0/255.255.0.0
+
+  2.访问共享文件夹
+# umount /nsd
+
+# mkdir /home/guests
+
+# mount classroom.example.com:/home/guests/  /home/guests
+
+# ls /home/guests/
+
+# su - ldapuser0
+
+
+
+
+
+ 使用LDAP认证
+
+    LDAP服务器:  网络用户认证
+
+• 轻量级目录访问协议
+ – Lightweight Directory Access Protocol
+  – 由服务器来集中存储并向客户端提供的信息,存储方式类似于DNS分层结构
+  – 提供的信息包括:用户名、密码、通信录、主机名映 射记录、......
+
+      网络用户: 由LDAP服务器提供用户名 密码信息
+      本地用户: /etc/passwd  /etc/shadow
+
+
+一  搭建LDAP服务器 classroom.example.com
+
+二  搭建客户端,虚拟机Server0
+
+    1.安装软件sssd,与LDAP服务器沟通
+  [root@server0 /]# yum  -y  install  sssd
+     
+    2.安装图形软件配置sssd软件
+  [root@server0 /]# yum  -y  install  authconfig-gtk
+
+     3.运行图形软件进行配置
+  [root@server0 /]# authconfig-gtk
+
+   选择LDAP
+      dc=example,dc=com             #指定服务端域名
+      classroom.example.com         #指定服务端主机名
+
+  勾选TLS加密
+  使用证书加密: http://classroom.example.com/pub/example-ca.crt
+
+   选择LDAP密码
+
+    4.重起服务
+  [root@server0 ~]# systemctl restart sssd
+  [root@server0 ~]# systemctl enable sssd
+    5.验证:
+  [root@server0 ~]# grep ldapuser0 /etc/passwd
+  [root@server0 ~]# id ldapuser0    #可以看到用户基本信息
+
+
+
+
+9. 设置autofs触发挂载+NFS共享客户端
+
+LDAP服务器 —— classroom
+    起LDAP服务端，提供用户账号（ldapuser0）及密码
+    起NFS服务端，提供用户的家目录 /home/guests/ldapuser0
+LDAP客户机 —— server0
+    通过sssd服务、authconfig-tui配置
+    把classroom上的/home/guests/ldapuser0在server0上出现
+
+如何实现“把classroom上的/home/guests/ldapuser0在server0上出现”？
+—— 手动mount挂载，不方便（挂载/卸载XX用户家目录需要手动）
+—— 配置autofs自动挂载（按需挂载/卸载）
+    （1）当用户ldapuser0登录时，自动创建挂载点并挂载主目录
+    （2）当用户ldapuser0退出后，5分中后自动卸载主目录，并且删除挂载点
+
+服务端的目录位置
+   classroom.example.com:/home/guests/ldapuser0
+客户端的目录位置
+   /home/guests/ldapuser0
+
+实现方法：
+1）装包 autofs
+2）配置
+# mkdir /home/guests/  //提前准备家目录（挂载点）的父目录
+# vim  /etc/auto.master
+挂载点的父目录  	自定义挂载策略文件的绝对路径
+/home/guests 	/etc/guest.rule 
+# vim  /etc/guest.rule 	 		//提供策略文件
+挂载点名  		-挂载参数  	设备的路径
+ldapuser0 	-rw,v3   	classroom.example.com:/home/guests/ldapuser0
+3）起服务 autofs
+
+

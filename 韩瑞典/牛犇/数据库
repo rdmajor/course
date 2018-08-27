@@ -1,0 +1,159 @@
+数据库服务基础
+
+什么是数据库：存放数据的仓库
+
+  数据库中有很的库，在库里面有很多的表格
+  表字段 、表记录
+
+部署mariadb数据库服务器
+• RHEL7 中的 MariaDB 相关包
+– mariadb-server:提供服务端有关的系统程序
+– MariaDB默认端口号：3306
+– 数据库主配置文件：/etc/my.cnf
+
+一、部署mariadb数据库服务器
+1.安装mariadb-server
+[root@server0 ~]# yum -y install mariadb-server
+
+2.启动mariadb服务
+[root@server0 ~]# systemctl  restart  mariadb
+[root@server0 ~]# systemctl  enable  mariadb
+
+二、使用数据库
+    默认无需密码直接登陆
+
+[root@server0 ~]# mysql
+  > show  databases;    #查看所有的库
+  > create  database  nsd1805;  #创建库nsd1805
+  > show  databases;    #查看所有的库
+
+  > drop  database  nsd1805;  #删除nsd1805库
+  > show  databases;    #查看所有的库
+
+  > create  database  nsd;  #创建库nsd
+  > show  databases;    #查看所有的库
+  > exit
+Bye
+
+三、为数据库管理员 账号修改密码
+– mysqladmin [-u用户名]  [-p[旧密码]]  password  '新密码'
+
+  数据库管理员：root 数据库最高权限用户   由数据库mysql库user表保存
+
+  系统管理员：root 系统最高权限用户    /etc/passwd
+
+[root@server0 ~]# mysqladmin -u root password '123'
+
+[root@server0 ~]# mysql -u root -p
+Enter password: 
+
+[root@server0 ~]# mysql -u root -p123   #非交互式
+
+四、导入数据库的数据
+
+# wget http://classroom.example.com/pub/materials/users.sql
+# ls 
+
+[root@server0 ~]# mysql -u root -p123 nsd < users.sql
+                将users.sql的数据导入到nsd库中
+ 
+[root@server0 ~]# mysql -u root -p123
+MariaDB [(none)]> use nsd;     #切换nsd库
+MariaDB [nsd]> show tables;    #查看所有表格
+
+###################################################
+五、表格操作   增(insert)    删(delete)      改(update)     查(select)
+
+select 表字段  from  表名
+
+[root@server0 ~]# mysql -u root -p123
+MariaDB [(none)]> use nsd;     #切换nsd库
+MariaDB [nsd]> show tables;    #查看所有表格
+
+MariaDB [nsd]> select  *  from base;
+MariaDB [nsd]> select  *  from location;
+
+MariaDB [nsd]> desc base;   #查看表结构
+
+MariaDB [nsd]> select id,password from base;
+MariaDB [nsd]> select id,name from base;
+
+MariaDB [nsd]> use mysql;
+MariaDB [nsd]> desc user;  
+MariaDB [nsd]> select  user,host,password  from  user; 
+
+六、数据库授权
+
+– 除了root用户,此nsd数据库只能被用户lisi查询,此用户的密码为123
+– 不需要创建本地用户lisi
+
+– GRANT 权限列表  ON 数据库名.表名 TO 用户名@客户机地址
+ IDENTIFIED BY '密码';
+
+  grant select on  nsd.*  to  lisi@localhost 
+  identified by '123';
+
+  当lisi从localhost本地登陆输入密码123，将会获得nsd数据库中所有表的查询权限
+
+[root@server0 ~]# mysql -u root -p123
+
+MariaDB [(none)]> grant select on nsd.* to lisi@localhost  identified by  '123';
+
+
+    > select user,host,password from mysql.user;
+
+
+
+
+七、多表查询，有条件的查询，表记录的删出及增加
+2. 在系统 server0 上使用数据库 nsd,并使用相
+应的 SQL 查询以回答下列问题:
+1)密码是 solicitous 的人的名字?
+[root@server0 ~]# mysql -u root -p123
+MariaDB [(none)]> use nsd;
+MariaDB [nsd]> select * from base  where password='solicitous';
+
+MariaDB [nsd]> select name from base  where password='solicitous';
+
+MariaDB [nsd]> select id,name from base  where password='123';
+
+MariaDB [nsd]> select * from base  where name='tom';
+
+
+2)有多少人的    姓名是 Barbara 同时居住在 Sunnyvale?
+      
+> select * from base,location    
+ where  base.name='Barbara'  and                
+ location.city='Sunnyvale'   and                
+ base.id=location.id;
+
+> select count(*) from base,location     
+ where base.name='Barbara' and                
+ location.city='Sunnyvale' and    
+ base.id=location.id;              
+
+MariaDB [nsd]> insert base values('6','Barbara','678');
+MariaDB [nsd]> select * from base;
+MariaDB [nsd]> insert location values('6','Sunnyvale');
+MariaDB [nsd]> select * from location;
+
+
+3. 禁止空密码 root用户访问 mariadb 数据库
+[root@server0 ~]# mysql -u root -p123
+
+MariaDB [nsd]> use mysql;
+
+MariaDB [mysql]> select user,host,password from user;
+
+MariaDB [mysql]> select user,host,password from user   where password='';
+
+MariaDB [mysql]> delete from user where password='';
+
+MariaDB [mysql]> select user,host,password from user;
+
+MariaDB [mysql]> flush privileges;   #刷新user表记录
+
+
+[root@server0 ~]# mysql -u root -h server0.example.com
+  最终登陆失败
+

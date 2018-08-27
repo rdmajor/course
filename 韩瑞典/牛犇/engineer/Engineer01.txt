@@ -1,0 +1,195 @@
+
+  服务端: 1.有软件包   2.仓库数据文件   3.共享服务(Web或FTP)
+
+  客户端: 书写一个配置文件  /etc/yum.repos.d/*.repo
+
+######################################################
+扇区默认的大小512字节
+
+一块硬盘的“艺术”之旅
+• 识别硬盘 => 分区规划 => 格式化 => 挂载使用
+   lsblk       fdisk      mkfs.    mount 
+一  识别硬盘
+[root@server0 ~]# lsblk       #列出当前系统所有识别的硬盘
+
+二  分区规划
+
+• MBR/msdos 分区模式
+– 主分区   扩展分区  逻辑分区
+– 1~4个主分区  或者  3个主分区+1个扩展分区(n个逻辑分区)
+– 最大支持容量为 2.2TB 的磁盘
+– 扩展分区不能格式化
+
+• GPT 分区模式
+–  最大支持容量为 18EB 的空间
+      1EB=1000PB
+      1PB=1000TB
+–  划分128主分区
+
+    厂商: 1TB=1000GB
+    计算机: 1TiB=1024GiB
+
+• 查看分区表
+– fdisk -l /dev/sda
+
+• 修改硬盘的分区表
+– fdisk 硬盘设备
+
+[root@server0 ~]# fdisk  /dev/vdb  
+   n 创建新的分区----->回车----->回车---->回车----->在last结束时 +1G
+   p 查看分区表
+   n 创建新的分区----->回车----->回车---->回车----->在last结束时 +2G
+   d 删除分区
+   w 保存并退出
+
+[root@server0 ~]# ls /dev/vdb[1-2]
+[root@server0 ~]# lsblk 
+
+三   格式化
+[root@server0 ~]# mkfs.ext4 /dev/vdb1
+[root@server0 ~]# mkfs.xfs  /dev/vdb2
+
+[root@server0 ~]# blkid /dev/vdb1    #可以看到UUID与文件系统
+       UUID:设备的唯一标识
+
+四  mount使用
+[root@server0 ~]# mount /dev/vdb1 /mypart1 
+[root@server0 ~]# df  -h   #查看当前系统 已经挂载 的所有设备信息
+
+五   开机自动挂载文件 /etc/fstab(file system  table)
+补充:vim技巧: 'o'另起新的一行进入 输入模式(编辑模式)
+
+   设备路径       挂载点        类型      参数(支持的功能)    备份标记     检测顺序
+ /dev/vdb1  /mypart1  ext4   defaults        0        0
+
+[root@server0 ~]# vim  /etc/fstab
+
+验证:
+[root@server0 ~]# mount -a
+1.需要将检测的设备,卸载
+2.将当前 系统没有挂载,但/etc/fstab文件中书写了,设备进行挂载
+[root@server0 ~]# mount -a
+[root@server0 ~]# df -h
+###################################################
+总结:
+1.列出识别硬盘   lsblk
+2.划分新分区  fdisk
+3.刷新分区表  partprobe
+4.格式化   mkfs.ext4  mkfs.xfs ----> blkid 查看文件系统
+5.挂载使用  mount ------> df -h 进行查看
+6.开机自动挂载  /etc/fstab
+
+################################################### 
+请描述该设备/dev/sda5标识的含义:
+      SCSI类型的设备,第一个硬盘的第五个分区
+      SCSI类型的设备,第一个硬盘的第一个逻辑分区
+
+######################################################
+LVM逻辑卷管理
+  逻辑卷作用: 
+      1.整合分散的空间   2.可以动态扩大空间
+
+  逻辑卷创建: 
+     零散空闲存储 ----> 整合的虚拟磁盘---->虚拟的分区-->格式化--->挂载使用
+
+     物理卷(PV)------->卷组(VG)----->逻辑卷(LV)
+
+     将众多的物理卷(PV),组成卷组(VG),再从卷组中划分出逻辑卷(LV)
+
+物理卷  Physical Volume
+卷组  Volume Group
+逻辑卷  Logical Volume
+
+#####################################################
+一   创建逻辑卷
+
+1.创建卷组
+  格式：vgcreate   卷组名     设备路径
+
+[root@server0 ~]# vgcreate  systemvg   /dev/vdc[1-2]
+[root@server0 ~]# vgs     #显示卷组基本信息
+[root@server0 ~]# pvs     #显示物理卷基本信息
+
+2.创建逻辑卷
+  格式：lvcreate  -n 逻辑卷名字   -L  大小      卷组名
+
+[root@server0 ~]# lvs   #显示逻辑卷基本信息
+
+[root@server0 ~]# lvcreate -n mylv -L 16G   systemvg
+
+3.逻辑卷的使用
+[root@server0 ~]# mkfs.ext4  /dev/systemvg/mylv 
+
+[root@server0 ~]# vim /etc/fstab 
+/dev/systemvg/mylv   /lv   ext4   defaults  0  0
+
+[root@server0 ~]# mount  -a  #进行自动挂载
+[root@server0 ~]# df  -h
+
+######################################################
+扩展逻辑卷
+
+一   卷组有足够的剩余空间
+
+ 1.直接扩展逻辑卷的空间
+[root@server0 ~]# lvextend -L  18G  /dev/systemvg/mylv 扩展到18G
+[root@server0 ~]# lvextend -L  +18G  /dev/systemvg/mylv 再加18G
+ 2.扩展逻辑卷的文件系统
+   刷新ext4文件系统：resize2fs
+   刷新xfs文件系统：xfs_growfs
+
+[root@server0 ~]# resize2fs  /dev/systemvg/mylv 
+
+二   卷组没有足够的剩余空间
+1.扩展卷组空间
+[root@server0 ~]# vgextend systemvg /dev/vdc3
+
+2.扩展逻辑卷的空间
+[root@server0 ~]# lvextend -L  25G  /dev/systemvg/mylv 
+
+3.扩展逻辑卷的文件系统
+   刷新ext4文件系统：resize2fs
+   刷新xfs文件系统：xfs_growfs
+[root@server0 ~]# resize2fs  /dev/systemvg/mylv
+
+#####################################################
+逻辑卷可以做缩减（了解）
+   ext4文件系统支持缩减
+   xfs文件系统不支持缩减
+####################################################
+卷组划分空间的单位PE， 默认每一个PE大小4M
+
+[root@server0 ~]# vgdisplay systemvg
+
+• 创建卷组的时候设置PE大小
+– vgcreate -s PE大小 卷组名 空闲分区...
+– vgchange -s PE大小 卷组名 空闲分区...
+
+• 创建逻辑卷的时候指定PE个数
+– lvcreate -l PE个数 -n 逻辑卷名 卷组名
+
+1.显示卷组详细信息
+[root@server0 ~]# vgdisplay systemvg   #查看PE大小
+ 
+2.修改卷组PE大小
+[root@server0 ~]# vgchange -s 1M  systemvg 
+[root@server0 ~]# vgdisplay systemvg   #查看PE大小
+
+3.以PE的个数，创建逻辑卷
+[root@server0 ~]# lvcreate -l 50 -n database systemvg
+[root@server0 ~]# lvs
+
+####################################################
+ 逻辑卷删除
+
+  先删除逻辑卷，再删除卷组，最后删除物理卷
+
+[root@server0 ~]# lvremove /dev/systemvg/mylv
+[root@server0 ~]# umount /lv
+
+[root@server0 ~]# lvremove /dev/systemvg/mylv
+
+[root@server0 ~]# vgremove systemvg
+
+[root@server0 ~]# pvremove /dev/vdc[1-3]
+

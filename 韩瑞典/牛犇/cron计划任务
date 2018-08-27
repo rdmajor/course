@@ -1,0 +1,33 @@
+cron计划任务
+
+• 用途:按照设置的时间间隔为用户反复执行某一项固定的系统任务
+
+• 软件包:cronie、crontabs
+• 系统服务:crond
+
+• 日志文件:/var/log/cron
+
+如何编写crontab任务记录
+
+  分   时   日   月   周           任务命令行
+
+  *     *    *   *    *
+
+	*:匹配范围内任意时间
+	,:分隔多个不连续的时间点
+	-:指定连续时间范围
+	/n:指定时间频率,每n ..
+
+• 使用 crontab 命令
+– 编辑:crontab -e [-u 用户名]
+– 查看:crontab -l [-u 用户名]
+– 清除:crontab -r [-u 用户名]
+
+    每分钟记录系统时间,将系统时间写入到/opt/time.txt
+
+[root@A ~]# crontab -e -u root       #书写计划任务
+*  *  *  *  *  date  >> /opt/time.txt 
+
+[root@A ~]# crontab -l -u root     #查看root计划任务
+
+[root@A ~]# cat /opt/time.txt 

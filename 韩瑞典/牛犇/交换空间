@@ -1,0 +1,29 @@
+交换空间--相当于虚拟内存,
+– 当物理内存不够用时,使用磁盘空间来模拟内存,在一定程度上缓解内存不足的问题
+– 交换分区:以空闲分区充当的交换空间
+
+一、 创建交换空间
+
+1.前提要有空闲的分区
+
+2.首先格式化交换文件系统
+[root@server0 ~]# mkswap /dev/vdb1  
+[root@server0 ~]# mkswap /dev/vdb2
+[root@server0 ~]# blkid /dev/vdb1
+
+3. 启用交换分区
+[root@server0 ~]# swapon /dev/vdb1     #启用/dev/vdb1交换分区
+[root@server0 ~]# swapon  -s           #查看交换空间的组成  成员
+[root@server0 ~]# swapoff /dev/vdb1    #停用交换分区
+[root@server0 ~]# swapon -s
+
+4.完成开机自动启用，交换分区
+[root@server0 ~]# vim /etc/fstab
+/dev/vdb1  swap  swap defaults 0 0
+/dev/vdb2  swap  swap defaults 0 0
+
+[root@server0 ~]# swapoff  /dev/vdb1
+[root@server0 ~]# swapon  -a    #检测交换分区是否书写正确  
+[root@server0 ~]# swapon  -s
+
+

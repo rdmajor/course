@@ -1,0 +1,43 @@
+基础邮件服务
+
+• 电子邮件服务器的基本功能
+ – 为用户提供电子邮箱存储空间(用户名@邮件域名)
+ – 处理用户发出的邮件（SMTP） —— 传递给收件服务器
+ – 处理用户收到的邮件（pop3 IMAP）—— 投递到邮箱
+
+虚拟机Server0
+
+1.安装postfix软件包
+[root@server0 ~]# yum -y install postfix
+[root@server0 ~]# rpm -q postfix
+
+2.修改配置文件/etc/postfix/main.cf
+[root@server0 ~]# vim /etc/postfix/main.cf
+ 补充：vim末行模式    输入 :set nu 实现添加行号
+
+ 99行    myorigin = server0.example.com   #默认补全的域名后缀
+ 116行  inet_interfaces = all           #允许所有人使用邮件服务
+ 164行  mydestination = server0.example.com  #判断为本域邮件
+
+3.重起postfix服务
+[root@server0 ~]# systemctl restart postfix
+
+4.创建本地用户进行收发邮件
+[root@server0 ~]# useradd yg
+[root@server0 ~]# useradd xln
+• mail 发信操作
+– mail -s '邮件标题'   -r 发件人     收件人[@收件域]...
+
+• mail 收信操作
+– mail [-u 用户名]
+[root@server0 ~]# mail -s '葵花宝典'  -r   yg  xln
+haha xixi hehelele
+.    #提交邮件信息
+ 
+[root@server0 ~]# mail -u xln
+Heirloom Mail version 12.5 7/5/10.  Type ? for help.
+"/var/mail/xln": 1 message 1 new
+>N  1 yg@server0.example.c  Tue Jul 17 14:25  19/631   
+& 1
+& q    #退出
+

@@ -1,0 +1,152 @@
+
+真机远程管理虚拟机
+ 1.前提可以ping通
+
+ 2.远程管理  ssh  用户名@对方IP地址
+[root@room9pc01 ~]# ssh root@172.25.0.11
+
+[root@server0 ~]# hostname
+[root@server0 ~]# ifconfig 
+[root@server0 ~]# exit      #退出远程管理回到真机
+
+ 补充: ctrl + shift  + t   新开一个终端
+
+3.远程管理选项  -X(大写)  在本机运行对方的图形程序
+
+[root@room9pc01 ~]# ssh -X root@172.25.0.11
+
+[root@server0 ~]# firefox  #火狐
+
+[root@server0 ~]# firewall-config    #防火墙的图形工具
+  
+########################################################
+制作永久的别名,方便远程管理
+ 
+真机:永久的别名配置文件/root/.bashrc (系统级配置文件)
+
+[root@room9pc01 ~]# vim  /root/.bashrc 
+
+ alias  gos='ssh  -X  root@172.25.0.11'
+ alias  god='ssh  -X  root@172.25.0.10'
+
+#######################################################
+软件包的管理
+
+1.关闭虚拟机Server添加虚拟的光驱设备
+
+2.系统显示光盘内容
+[root@server0 ~]# mount  /dev/cdrom   /dvd/
+
+• RPM Package Manager,RPM包管理器
+– rpm -q   软件名...                    #查询软件是否安装
+– rpm -ivh 软件名-版本信息.rpm...    #安装软件包
+– rpm -e   软件名...                    #卸载软件包
+
+[root@server0 ~]# rpm -q 软件名   #查询是否安装
+
+# rpm -ivh /dvd/Packages/vsftpd-3.0.2-22.el7.x86_64.rpm 
+
+[root@server0 ~]# rpm -q vsftpd    #查询是否安装成功
+[root@server0 ~]# rpm -e vsftpd    #卸载软件程序
+
+#######################################################
+
+Yum软件包仓库,自动解决依赖关系
+
+服务端:为客户端安装软件包,并解决依赖关系
+
+服务端: 1.众多的软件包  2.仓库清单文件  3.共享的服务
+
+#服务端:classroom.example.com搭建Web服务,共享光盘所有内容RHEL7.0
+
+ http://classroom.example.com/content/rhel7.0/x86_64/dvd/
+
+ 客户端: 书写配置文件/etc/yum.repos.d/*.repo
+
+[root@server0 ~]# vim /etc/yum.repos.d/rhel7.repo
+        
+ [rhel7]          #仓库标识(可以随意写)
+ name=rhel7.0     #仓库描述信息(可以随意写)
+ baseurl=http://classroom.example.com/content/rhel7.0/x86_64/dvd/         
+                       #具体服务端访问位置
+ enabled=1        #是否启用该文件
+ gpgcheck=0       #是否检测签名认证
+
+[root@server0 ~]# yum  repolist    #列出仓库信息
+
+######################################################
+Yum使用
+
+   yum  -y  install  软件名
+
+[root@server0 ~]# yum  -y install  xeyes  #小游戏
+[root@server0 ~]# xeyes
+
+   yum   remove   软件名      #卸载
+   yum   search   关键字     #查询
+
+####################################################### 
+升级Linux内核
+
+只使用于虚拟机
+http://classroom.example.com/content/rhel7.0/x86_64/errata/Packages/kernel-3.10.0-123.1.2.el7.x86_64.rpm
+
+下载软件包
+• 使用wget下载工具,默认下载到当前
+– wget 软件包的URL网址
+
+[root@server0 ~]# wget http://classroom.example.com/content/rhel7.0/x86_64/errata/Packages/kernel-3.10.0-123.1.2.el7.x86_64.rpm  
+
+[root@server0 ~]# uname -r
+3.10.0-123.el7.x86_64
+
+# rpm -ivh  kernel-3.10.0-123.1.2.el7.x86_64.rpm 
+
+[root@server0 ~]# uname -r
+3.10.0-123.el7.x86_64
+[root@server0 ~]# reboot 
+[root@room9pc01 ~]# gos
+Last login: Tue Jul  3 15:38:14 2018 from 172.25.0.250
+[root@server0 ~]# uname -r
+3.10.0-123.1.2.el7.x86_64
+[root@server0 ~]# 
+#######################################################
+配置网络
+
+二  配置永久  IP地址  子网掩码   网关地址
+
+网卡配置文件:/etc/sysconfig/network-scripts/ifcfg-eth0 
+
+1.查看命令识别的网卡名
+[root@A ~]# nmcli connection show 
+
+2.配置IP地址  子网掩码   网关地址
+[root@A ~]# nmcli connection modify  'System eth0'         
+  ipv4.method  manual                                   
+  ipv4.addresses  '172.25.0.110/24  172.25.0.254'       
+  connection.autoconnect   yes
+    
+    nmcli connection  修改   '网卡识别名称'
+    ipv4.方法  手工配置
+    ipv4.地址  ' ip地址/子网掩码    网关地址'
+        每次开机自动启用网络配置
+
+3.激活配置
+[root@A ~]# nmcli connection up 'System eth0' 
+
+4.网关查看
+[root@A ~]# route
+..........   Gateway     .......... ..........
+ ..........           172.25.0.254      ..........
+
+#######################################################
+三  配置永久DNS地址,永久配置文件/etc/resolv.conf 
+
+[root@A ~]# vim /etc/resolv.conf 
+ nameserver  172.25.254.254
+
+ 验证:
+[root@A ~]# nslookup classroom.example.com
+[root@A ~]# nslookup server0.example.com
+[root@A ~]# nslookup desktop0.example.com
+

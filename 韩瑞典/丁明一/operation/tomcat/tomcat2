@@ -1,0 +1,92 @@
+案例1：Subversion基本操作
+
+步骤一：安装Subversion服务器
+1）YUM安装subversion软件
+2)创建版本库
+[root@web1 ~]# mkdir /var/svn/ 
+[root@web1 ~]# svnadmin create /var/svn/project
+3）本地导入初始化数据
+[root@web1 ~]# cd /usr/lib/systemd/system/ 
+[root@web1 ~]# svn import . file:///var/svn/project/ -m "注释信息"
+4）修改配置文件，创建账户与密码
+anon-access = none
+//19行，匿名无任何权限
+auth-access = write
+//20行，有效账户可写
+password-db = passwd
+//27行，密码文件
+authz-db = authz
+//34行，ACL访问控制列表文件
+[root@web1 ~]# vim /var/svn/project/conf/passwd 
+… …
+[users]
+harry = 123456
+//用户名和密码
+tom = 123456
+//用户名和密码
+[root@web1 ~]# cat /var/svn/project/conf/authz 
+[/]                                //定义ACL访问控制
+harry = rw                        //用户对项目根路径可读可写
+tom = rw
+
+5）启动服务
+svnserve -d  -r /var/svn/project
+备注：启动服务也可以使用svnserve -d启动，但客户端访问时需要指定绝对路径（svn://服务器IP/var/svn/project）
+
+步骤二：客户端测试
+1）将服务器上的代码下载到本地
+svn --username harry --password 123456 co svn://192.168.2.100/ code        
+//建立本地副本,从服务器192.168.2.100上co下载代码到本地code目录
+//用户名harry,密码123456
+
+svn ci -m "modify user"        //将本地修改的数据同步到服务器
+svn update                    //将服务器上新的数据同步到本地
+svn info     svn://192.168.2.100    //查看版本仓库基本信息
+svn log     svn://192.168.2.100    //查看版本仓库的日志
+svn add test.sh                //新加文件或目录，需要将文件或目录加入版本控制
+svn diff                     //查看所有文件的差异
+svn diff umount.target        //仅查看某一个文件的差异
+svn cat svn://192.168.2.100/reboot.target    	    //查看服务器文件的内容
+[root@web2 code]# sed -i 'd' tmp.mount                //删除文件所有内容，但未提交
+[root@web2 code]# svn revert tmp.mount                //还原tmp.mount文件
+[root@web2 code]# rm -rf  *.target                    //任意删除若干文件
+[root@web2 code]# svn update                          //还原
+[root@web2 code]# sed -i '1a #test###' tuned.service  //修改本地副本中的代码文件
+[root@web2 code]# svn ci  -m  "xxx"//提交代码
+[root@web2 code]# svn merge -r7:2    tuned.service     //将文件从版本7还原到版本2
+
+案例2：使用Subversion协同工作
+1.修改不同的文件 //每人都要  svn update 
+2.修改相同文件的不同行 //先更新，再提交
+3.修改相同文件的相同行   //手动解决冲突，提交
+
+步骤二：使用dump指令备份版本库数据
+[root@web1 ~]# svnadmin dump /var/svn/project > project.bak   //备份
+[root@web1 ~]# svnadmin load /var/svn/project2 < project.bak  //还原
+
+案例3：制作nginx的RPM包
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

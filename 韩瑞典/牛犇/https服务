@@ -1,0 +1,86 @@
+
+HTTP服务基础
+
+• 基于 B/S (Browser/Server)架构的网页服务
+– 服务端提供网页
+– 浏览器下载并显示网页
+
+• Hyper Text Markup Language,超文本标记语言(html)
+• Hyper Text Transfer Protocol,超文本传输协议(http)
+
+– Listen:监听地址:端口(80)
+– ServerName:本站点注册的DNS名称(空缺)
+– DocumentRoot:网页根目录(/var/www/html)
+– DirectoryIndex:起始页/首页文件名(index.html)
+
+#################################################
+一、安全的Web服务器（https安全的超文本传输协议 默认端口 443）
+
+回顾虚拟Web主机：
+虚拟机Server0
+1.安装httpd软件
+
+# echo '<h1>NSD1806 Web1' > /var/www/html/index.html
+# cat /var/www/html/index.html
+
+# cat /etc/httpd/conf.d/nsd01.conf
+<VirtualHost  *:80>
+   ServerName  www0.example.com
+   DocumentRoot  /var/www/html
+</VirtualHost>
+
+# systemctl  restart  httpd
+
+########################################################
+构建安全加密的Web服务器
+
+一、基础设施
+  – 公钥:主要用来加密数据
+  – 私钥:主要用来解密数据(与相应的公钥匹配)
+  – 数字证书:证明拥有者的合法性/权威性(单位名称、
+      有效期、公钥、颁发机构及签名、......)
+ – Certificate Authority,数字证书授权中心:负责证书
+      的申请/审核/颁发/鉴定/撤销等管理工作
+
+虚拟机Server0
+1.部署网站证书(营业执照)
+# cd /etc/pki/tls/certs/
+# wget http://classroom.example.com/pub/tls/certs/server0.crt
+# ls
+
+2.部署根证书(公安局信息)
+# cd /etc/pki/tls/certs/
+# wget http://classroom.example.com/pub/example-ca.crt
+# ls
+
+3.部署私钥(用于解密数据)
+# cd /etc/pki/tls/private/
+# wget http://classroom.example.com/pub/tls/private/server0.key
+# ls
+
+4.安装mod_ssl软件包，提供安全支持
+# yum -y install mod_ssl
+
+5.修改配置文件/etc/httpd/conf.d/ssl.conf
+[root@server0 /]# vim /etc/httpd/conf.d/ssl.conf
+ 补充：vim末行模式    输入 :set nu 实现添加行号
+
+   59行  DocumentRoot "/var/www/html"
+   60行  ServerName www0.example.com:443
+
+指定网站证书位置
+100行  SSLCertificateFile /etc/pki/tls/certs/server0.crt
+
+指定私钥位置
+107行  SSLCertificateKeyFile /etc/pki/tls/private/server0.key
+
+指定根证书的位置
+122行 SSLCACertificateFile /etc/pki/tls/certs/example-ca.crt
+
+6.重起httpd服务
+[root@server0 /]# systemctl restart httpd
+
+7.验证
+[root@desktop0 ~]# firefox https://www0.example.com
+    选择   我了解风险------->添加例外------->确认安全例外
+

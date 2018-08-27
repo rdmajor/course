@@ -1,0 +1,82 @@
+部署LNMP环境
+需要软件：
+nginx
+mariadb、mariadb-server、mariadb-devel
+php、php-fpm、php-mysql
+1）安装基础依赖包
+gcc openssl-devel pcre-devel zlib-devel
+2）源码安装Nginx
+3）安装MariaDB
+mariadb   mariadb-server   mariadb-devel
+4）php和php-fpm(该软件包在lnmp_soft中提供)
+yum -y  install  php   php-mysql
+yum -y  install php-fpm-5.4.16-42.el7.x86_64.rpm
+
+启动服务
+1）启动Nginx服务
+2）启动MySQL服务
+3）启动PHP-FPM服务
+4）设置防火墙与SELinux
+php格式
+<?php
+$i=33;
+echo $i;
+?>
+
+构建LNMP平台
+location//匹配用户的地址栏
+修改Nginx配置文件并启动服务
+location  ~  \.php$  {
+     root  html;
+     fastcgi_pass   127.0.0.1:9000;    #将请求转发给本机9000端口，PHP解释器
+     fastcgi_index  index.php;      
+     include  fastcgi.conf;
+}
+LNMP常见问题
+Nginx的默认访问日志文件为/usr/local/nginx/logs/access.log
+Nginx的默认错误日志文件为/usr/local/nginx/logs/error.log
+PHP默认错误日志文件为/var/log/php-fpm/www-error.log
+
+地址重写
+rewrite regex(正则表达式) replacement flag
+rewrite 旧地址 新地址 [选项]
+
+跳转地址栏:rewrite /a.html  /b.html  redirect;
+
+修改配置文件(访问192.168.4.5的请求重定向至www.tmooc.cn):rewrite ^/ http://www.tmooc.cn/;
+
+修改配置文件(访问192.168.4.5/下面子页面，重定向至www.tmooc.cn/下相同的页面)
+rewrite ^/(.*)$ http://www.tmooc.cn/$1;
+
+修改配置文件(实现curl和火狐访问相同链接返回的页面不同)
+1.创建网页目录以及对应的页面文件
+2.修改Nginx服务配置
+if ($http_user_agent ~* firefox) {   //识别客户端firefox浏览器
+rewrite ^(.*)$ /firefox/$1;
+
+
+
+200一切正常 300重定向 400用户输错了 500服务器故障
+地址重写格式【总结】
+rewrite 旧地址 新地址 [选项];
+last 不再读其他rewrite
+break 不再读其他语句，结束请求
+redirect 临时重定向
+permament 永久重定向
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

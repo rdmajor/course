@@ -1,0 +1,35 @@
+一、搭建基本Web服务
+
+Web服务器：虚拟机Server0
+1.安装软件包    Apache(httpd)  
+[root@server0 /]# yum -y install httpd
+ 
+2.启动httpd服务
+[root@server0 /]# systemctl restart httpd
+[root@server0 /]# systemctl enable httpd
+ln -s '/usr/lib/systemd/system/httpd.service' '/etc/systemd/system/multi-user.target.wants/httpd.service'
+
+3.本机测试
+[root@server0 /]# firefox  172.25.0.11
+
+4.书写网页文件
+  默认存放网页路径：/var/www/html
+  默认网页文件名字：index.html
+[root@server0 ~]# vim  /var/www/html/index.html
+<marquee><font  color=red><h1>NSD1806 阳光明媚</marquee>
+   滚动          字体颜色为红色   最大字体
+
+#####################################################
+搭建FTP服务
+1.安装vsftpd软件
+[root@server0 ~]# yum info vsftpd    #查看软件包的基本信息
+[root@server0 ~]# yum -y install vsftpd 
+
+2.重起vsftpd服务
+[root@server0 ~]# systemctl restart vsftpd  
+[root@server0 ~]# systemctl enable vsftpd   
+
+3.本机测试
+ 默认FTP服务共享路径：/var/ftp
+
+[root@server0 ~]# firefox  ftp://172.25.0.11

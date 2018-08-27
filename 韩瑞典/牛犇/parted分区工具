@@ -1,0 +1,22 @@
+parted分区工具，划分分区
+
+  GPT：大容量的划分，2T以上，最多支持128个主分区
+
+[root@server0 ~]# parted /dev/vdb 
+(parted) mktable 	gpt         #指定分区模式
+(parted) print                #输出分区表信息
+(parted) mkpart               #划分新的分区
+ 分区名称？  []? nsd              #分区的名字随便起
+ 文件系统类型？  [ext2]? ext4      #分区的文件系统，随便写无实际作用
+ 起始点？ 0            
+ 结束点？ 2G  
+  忽略/Ignore/放弃/Cancel? Ignore    #选择忽略
+(parted) unit GB                   #选择显示容量的单位为GB
+(parted) print
+(parted) mkpart 
+ 分区名称？  []? nsd  
+文件系统类型？  [ext2]? ext4
+起始点？ 2G          
+结束点？ 4G          
+(parted) print 
+(parted) quit

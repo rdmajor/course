@@ -1,0 +1,2 @@
+[root@room9pc01 ~]# nmcli connection add type ethernet con-name eth1 ifname eth1 autoconnect yes
+添加网卡

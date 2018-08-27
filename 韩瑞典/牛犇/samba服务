@@ -1,0 +1,105 @@
+Samba服务基础
+
+– 用途:为客户机提供共享使用的文件夹 (跨平台的共享,Windows与Linux）
+
+• 所需软件包:samba
+• 系统服务:smb
+– 协议:SMB(TCP 139)、CIFS(TCP 445)
+
+管理共享账号
+• Samba用户 —— 专用来访问共享文件夹的验证用户
+– 采用独立设置的密码
+– 但需要提前建立同名的系统用户(可以不设密码)
+
+• 使用 pdbedit 管理工具
+– 添加用户:pdbedit -a 用户名
+– 查询用户:pdbedit -L [用户名]
+– 删除用户:pdbedit -x 用户名
+
+配置文件及参数
+• 修改 /etc/samba/smb.conf
+[global]
+//全局设置
+workgroup = 工作组名
+
+[自定共享名]
+path = 文件夹绝对路径
+
+服务端：虚拟机Server0：
+1.安装samba软件
+[root@server0 ~]# yum -y install samba
+
+2.建立Samba共享帐号
+[root@server0 ~]# useradd -s /sbin/nologin harry
+[root@server0 ~]# pdbedit -a harry    #添加harry为共享帐号
+[root@server0 ~]# pdbedit -L    #查看所有共享帐号
+
+3.修改 /etc/samba/smb.conf主配置文件
+[root@server0 ~]# mkdir  /common
+[root@server0 ~]# vim  /etc/samba/smb.conf 
+[common]                  #共享名
+path = /common            #共享实际路径
+write list = harry      #允许harry可以写
+4.重起smb服务
+[root@server0 ~]# systemctl restart smb
+[root@server0 ~]# systemctl enable smb   
+
+5.SELinux策略修改，布尔值功能的开关
+   – 需要加 -P 选项才能实现永久设置(需要内存支持)
+# getsebool -a | grep samba   #查看所有布尔值 
+# setsebool [ -P ] samba_export_all_rw on  #允许所有人只读访问samba  -P 选项实现永久
+
+6.赋予harry本地目录权限
+[root@server0 ~]# setfacl -m u:harry:rwx /devops
+######################################################
+客户端访问服务端：
+   1.服务端 服务本身的访问控制
+   2.服务端 防火墙的配置
+   3.服务端 SELinux策略 
+   4.服务端 本地目录权限
+############################################################
+搭建读写的Samba共享
+客户端：虚拟机Desktop0
+1.实现开机自动挂载,通过挂载，更加科学方便的访问Samba共享
+客户端：虚拟机desktop0
+1.安装cifs-utils软件包（支持cifs协议）
+[root@desktop0 ~]# yum -y install cifs-utils
+
+2.开机自动挂载samba共享/etc/fstab
+[root@desktop0 ~]# vim /etc/fstab 
+   _netdev:声明网络设备
+     在开机启动时，该设备为网络设备，请先部署网络所有服务，具备网络参数后，在挂载此设备
+
+ //172.25.0.11/common   /mnt/nsd01  cifs
+ defaults,user=harry,pass=123,_netdev  0  0
+[root@desktop0 ~]#mkdir /mnt/nsd01
+[root@desktop0 ~]# mount  -a
+
+######################################################
+#####################################################
+multiuser机制,主要为普通用户设计
+
+多用户Samba挂载
+   客户端以权限较小的用户验证samba共享
+   在必要的时候普通用户，可以通过命令更改验证用户身份，获得写入权限
+
+• mount.cifs 的挂载参数
+– multiuser,提供对客户端多个用户身份的区分支持
+– sec=ntlmssp,提供NT局域网管理安全支持
+
+[root@desktop0 ~]# vim /etc/fstab 
+
+//172.25.0.11/devops /mnt/nsd02 cifs defaults,user=kenji,pass=123,_netdev,multiuser,sec=ntlmssp  0 0
+
+[root@desktop0 ~]# umount /mnt/nsd02
+
+[root@desktop0 ~]# mount -a
+[root@desktop0 ~]# df -h
+[root@desktop0 ~]# su - student
+[student@desktop0 ~]$ cd /mnt/nsd02
+
+$ cifscreds  add  -u  chihiro    172.25.0.11
+
+[student@desktop0 nsd02]$ touch 66.txt
+[student@desktop0 nsd02]$ exit
+

@@ -1,0 +1,95 @@
+用户基本信息存放在 /etc/passwd 文件
+[root@A ~]# head -1 /etc/passwd
+ root:x:0:0:root:/root:/bin/bash
+
+  用户名:密码占位符:UID:基本组的GID:用户描述信息:家目录:解释器程序
+
+用户密码信息存放在 /etc/shadow 文件
+[root@A ~]# head -1 /etc/shadow
+  用户名:密码加密之后的字符串:上一次修改密码的时间 ........
+
+组基本信息存放在 /etc/group 文件
+[root@A ~]# grep stugrp /etc/group
+stugrp:x:1605:
+
+  组名:组的密码占位符:GID:组成员列表
+##################################################################
+
+   设备路径       挂载点        类型      参数(支持的功能)    备份标记     检测顺序
+ /dev/vdb1  /mypart1  ext4   defaults        0        0
+
+##################################################################
+互联网常见的应用服务协议
+       http:超文本传输协议            端口号：80
+       FTP：文件传输协议                端口号：21
+       https:安全超文本传输协议    端口号：443
+       DNS:域名解析协议                  端口号：53
+       tftp:简单的文件传输协议      端口号：69
+       telnet:远程管理协议            端口号：23
+       smtp:发邮件协议                   端口号：25
+       pop3:收邮件协议                   端口号：110
+       snmp:互联管理协议                端口号：161
+
+目录结构
+
+[root@svr7 ~]# man hier
+
+ /boot 		      存放系统引导必需的文件,包括内核、启动配置
+ /bin、/sbin        存放各种命令程	序
+ /dev               存放硬盘、键盘、鼠标、光驱等各种设备文件
+ /etc 		      存放Linux系统及各种程序的配置文件
+ /root、/home/用户名  分别是管理员root、普通用户的默认家目录
+ /var 		      存放日志文件、邮箱目录等经常变化的文件
+ /proc 			  存放内存中的映射数据,不占用磁盘
+ /tmp 			  存放系统运行过程中使用的一些临时文件
+     
+MariaDB默认端口号：3306
+iSCSI共享存储默认端口： 3260
+   端口：编号标识协议（程序、服务）
+
+   数据包： 源IP地址   目标IP地址    数据    访问的端口号
+
+SELinux策略三大:布尔值、安全上下文值（标识）、非默认端口的开放
+
+5.布尔值（功能的开关）
+  – 需要加 -P 选项才能实现永久设置
+[root@server0 ~]# getsebool -a | grep samba
+[root@server0 ~]# setsebool samba_export_all_ro on
+[root@server0 ~]# getsebool -a | grep samba
+
+安全上下文值：方式1:参照标准目录,重设新目录的属性
+  – chcon [-R] --reference=模板目录   新目录
+[root@server0 ~]# ls -Zd /var/www   #查看安全上下文
+[root@server0 ~]# ls -Zd /webroot
+[root@server0 ~]# chcon -R --reference=/var/www /webroot
+[root@server0 ~]# ls -Zd /webroot
+
+非默认端口的开放：
+# semanage port -l | grep http
+# semanage port -a -t http_port_t  -p tcp  8909
+  # -a:添加    -t:类型     -p:协议  
+# systemctl restart httpd
+# firefox webapp0.example.com:8909
+
+
+
+
+
+ipv4.gateway   7.2版本设置DNS
+mkdir -m 2770 /home/admins
+yum -y reinstall 软件  重新装包
+
+fdisk -l /dev/vdb  看磁盘原来的分区模式
+gdisk /dev/vdb #支持gpt分区 
+df -hT 看格式化类型
+
+零客户邮件服务器：
+relayhost = [smtpX.example.com]     	//后端邮件服务器
+inet_interfaces = loopback-only  	//仅本机
+myorigin = desktopX.example.com 	//发件来源域
+mynetworks = 127.0.0.0/8 [::1]/128  	//信任网络	
+mydestination =   			//此行的值设为空
+local_transport = error:suiyixie  
+
+
+[root@server0 ~]# man teamd.conf    #连路聚合man帮助

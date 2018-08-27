@@ -1,0 +1,49 @@
+配置聚合连接(链路聚合   网卡绑定    网卡组队)
+
+  解决网卡单点故障（热备份结构）
+ 
+制作链路聚合
+ 
+1.创建虚拟网卡 team0,再开一个新的终端参考 man teamd.conf
+[root@server0 ~]# nmcli connection add type team       
+   con-name team0 ifname team0 autoconnect  yes         
+   config '{"runner": {"name": "activebackup"}}'
+
+[root@server0 ~]# ifconfig 
+
+  nmcli connection  添加  类型   team（组队）
+    配置文件名  team0   网卡设备名  team0  每次开机自动启用
+    工作模式的配置  热备份方式工作模式
+
+2.添加成员
+[root@server0 ~]# nmcli connection add type team-slave 
+con-name team0-1 ifname eth1 master team0 
+
+[root@server0 ~]# nmcli connection add type team-slave 
+con-name team0-2 ifname eth2 master team0 
+
+ nmcli connection 添加 类型   组队中成员
+  配置文件  team0-1  网卡设备  eth1  主设备为 team0
+
+3.为team0配置IP地址
+[root@server0 ~]# nmcli connection modify 'team0'        
+  ipv4.method manual ipv4.addresses '192.168.1.1/24' 
+  connection.autoconnect  yes
+
+4.激活所有配置
+[root@server0 ~]# nmcli connection up team0
+
+[root@server0 ~]# nmcli connection up team0-1
+[root@server0 ~]# nmcli connection up team0-2
+[root@server0 ~]# ifconfig
+
+5.专业查看team信息
+[root@server0 ~]# teamdctl  team0 state
+[root@server0 ~]# ifconfig eth1 down #关闭网卡eth1
+[root@server0 ~]# teamdctl  team0 state
+
+删除配置
+[root@server0 ~]# nmcli connection delete team0
+[root@server0 ~]# nmcli connection delete team0-1
+[root@server0 ~]# nmcli connection delete team0-2
+
